@@ -1,0 +1,14 @@
+# Uploaded user files (keep directory structures)
+uploads/avatars/*
+!uploads/avatars/.gitkeep
+uploads/selfies/*
+!uploads/selfies/.gitkeep
+uploads/proofs/*
+!uploads/proofs/.gitkeep
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
