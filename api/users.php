@@ -116,7 +116,7 @@ if ($method === 'POST') {
     }
 
     // B. Update user
-    if ($action === 'update') {
+    if ($action === 'update' || $action === 'edit') {
         $id = intval($input['id'] ?? 0);
         if (!$id) {
             sendJsonResponse(['success' => false, 'message' => 'ID peserta tidak valid.'], 400);
@@ -124,6 +124,7 @@ if ($method === 'POST') {
 
         $fullName = trim($input['full_name'] ?? '');
         $identifierNo = trim($input['identifier_no'] ?? '');
+        $username = trim($input['username'] ?? '');
         $userType = in_array($input['user_type'] ?? '', ['siswa', 'mahasiswa']) ? $input['user_type'] : 'siswa';
         $institution = trim($input['institution'] ?? '');
         $major = trim($input['major'] ?? '');
@@ -132,18 +133,38 @@ if ($method === 'POST') {
         $email = trim($input['email'] ?? '');
         $periodStart = !empty($input['period_start']) ? $input['period_start'] : null;
         $periodEnd = !empty($input['period_end']) ? $input['period_end'] : null;
-        $isActive = isset($input['is_active']) ? intval($input['is_active']) : 1;
         $newPassword = trim($input['password'] ?? '');
 
         // Check duplicate NIS/NIM
-        $checkStmt = $db->prepare("SELECT id FROM users WHERE identifier_no = ? AND id != ?");
-        $checkStmt->execute([$identifierNo, $id]);
-        if ($checkStmt->fetch()) {
-            sendJsonResponse(['success' => false, 'message' => 'NIS/NIM ini sudah digunakan oleh peserta lain.'], 400);
+        if (!empty($identifierNo)) {
+            $checkStmt = $db->prepare("SELECT id FROM users WHERE identifier_no = ? AND id != ?");
+            $checkStmt->execute([$identifierNo, $id]);
+            if ($checkStmt->fetch()) {
+                sendJsonResponse(['success' => false, 'message' => 'NIS/NIM ini sudah digunakan oleh peserta lain.'], 400);
+            }
         }
 
-        $fields = "full_name = ?, identifier_no = ?, user_type = ?, institution = ?, major = ?, division = ?, phone = ?, email = ?, period_start = ?, period_end = ?, is_active = ?";
-        $params = [$fullName, $identifierNo, $userType, $institution, $major, $division, $phone, $email, $periodStart, $periodEnd, $isActive];
+        // Check duplicate username if provided
+        if (!empty($username)) {
+            $checkUserStmt = $db->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
+            $checkUserStmt->execute([$username, $id]);
+            if ($checkUserStmt->fetch()) {
+                sendJsonResponse(['success' => false, 'message' => 'Username ini sudah digunakan oleh peserta lain.'], 400);
+            }
+        }
+
+        $fields = "full_name = ?, identifier_no = ?, user_type = ?, institution = ?, major = ?, division = ?, phone = ?, email = ?, period_start = ?, period_end = ?";
+        $params = [$fullName, $identifierNo, $userType, $institution, $major, $division, $phone, $email, $periodStart, $periodEnd];
+
+        if (!empty($username)) {
+            $fields .= ", username = ?";
+            $params[] = $username;
+        }
+
+        if (isset($input['is_active'])) {
+            $fields .= ", is_active = ?";
+            $params[] = intval($input['is_active']);
+        }
 
         if (!empty($newPassword)) {
             $fields .= ", password = ?";

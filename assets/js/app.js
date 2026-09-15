@@ -25,43 +25,214 @@ const AppState = {
     studentCircle: null
 };
 
-// Theme Switcher Engine (Hijau, Biru, Pink, Oren, Ungu)
-function setAppTheme(themeName) {
-    const validThemes = ['hijau', 'biru', 'pink', 'oren', 'ungu'];
-    if (!validThemes.includes(themeName)) themeName = 'hijau';
+// Color helper: convert hex to RGB
+function hexToRgb(hex) {
+    hex = hex.replace(/^#/, '');
+    if (hex.length === 3) {
+        hex = hex.split('').map(c => c + c).join('');
+    }
+    const num = parseInt(hex, 16);
+    if (isNaN(num) || hex.length !== 6) return null;
+    return {
+        r: (num >> 16) & 255,
+        g: (num >> 8) & 255,
+        b: num & 255
+    };
+}
 
-    // Apply to body
-    if (themeName === 'hijau') {
-        document.body.removeAttribute('data-theme');
+// Color helper: adjust brightness
+function adjustColor(hex, percent) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return hex;
+    const r = Math.max(0, Math.min(255, Math.round(rgb.r + (rgb.r * percent) / 100)));
+    const g = Math.max(0, Math.min(255, Math.round(rgb.g + (rgb.g * percent) / 100)));
+    const b = Math.max(0, Math.min(255, Math.round(rgb.b + (rgb.b * percent) / 100)));
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+// PWA Manifest and Theme Color Synchronizer
+function updatePWAManifest(themeColor, bgColor) {
+    const manifestLink = document.getElementById('pwa-manifest-link');
+    const customColor = localStorage.getItem('absensi_pkl_custom_color') || '';
+    const activeTheme = localStorage.getItem('absensi_pkl_theme') || 'hijau';
+    
+    // Update manifest tag URL with theme & color parameters
+    const manifestUrl = `./manifest.php?theme=${encodeURIComponent(activeTheme)}&color=${encodeURIComponent(customColor)}&t=${Date.now()}`;
+    if (manifestLink) {
+        manifestLink.setAttribute('href', manifestUrl);
+    }
+    
+    // Save cookies with 1 year lifetime for server-side persistence
+    document.cookie = `absensi_pkl_theme=${encodeURIComponent(activeTheme)}; path=/; max-age=31536000; SameSite=Lax`;
+    if (customColor) {
+        document.cookie = `absensi_pkl_custom_color=${encodeURIComponent(customColor)}; path=/; max-age=31536000; SameSite=Lax`;
     } else {
-        document.body.setAttribute('data-theme', themeName);
+        document.cookie = `absensi_pkl_custom_color=; path=/; max-age=0; SameSite=Lax`;
+    }
+}
+
+// Theme Engine (Presets & Custom Color Picker)
+function setAppTheme(themeName, customHex = null) {
+    const validThemes = ['hijau', 'biru', 'pink', 'oren', 'ungu', 'teal', 'merah'];
+    
+    if (themeName !== 'custom') {
+        if (!validThemes.includes(themeName)) themeName = 'hijau';
+        
+        // Remove inline CSS overrides to let preset classes take effect
+        const rootStyle = document.documentElement.style;
+        rootStyle.removeProperty('--theme-primary');
+        rootStyle.removeProperty('--theme-primary-hover');
+        rootStyle.removeProperty('--theme-secondary');
+        rootStyle.removeProperty('--theme-dark');
+        rootStyle.removeProperty('--theme-light');
+        rootStyle.removeProperty('--theme-primary-rgb');
+        rootStyle.removeProperty('--theme-glow');
+        rootStyle.removeProperty('--theme-card-tint');
+        rootStyle.removeProperty('--theme-card-border');
+        rootStyle.removeProperty('--theme-th-bg');
+        rootStyle.removeProperty('--theme-th-color');
+        rootStyle.removeProperty('--theme-th-border');
+        rootStyle.removeProperty('--theme-gradient');
+        rootStyle.removeProperty('--theme-gradient-glass');
+
+        if (themeName === 'hijau') {
+            document.body.removeAttribute('data-theme');
+        } else {
+            document.body.setAttribute('data-theme', themeName);
+        }
+
+        localStorage.setItem('absensi_pkl_theme', themeName);
+        localStorage.removeItem('absensi_pkl_custom_color');
+
+        const themeMap = {
+            hijau: { theme: '#0b6e4f', bg: '#064e3b' },
+            biru:  { theme: '#1d4ed8', bg: '#1e3a8a' },
+            pink:  { theme: '#be185d', bg: '#831843' },
+            oren:  { theme: '#c2410c', bg: '#7c2d12' },
+            ungu:  { theme: '#7e22ce', bg: '#581c87' },
+            teal:  { theme: '#0f766e', bg: '#134e4a' },
+            merah: { theme: '#b91c1c', bg: '#7f1d1d' }
+        };
+        const currentColors = themeMap[themeName] || themeMap.hijau;
+        const metaTheme = document.getElementById('meta-theme-color');
+        if (metaTheme) metaTheme.setAttribute('content', currentColors.theme);
+
+        updatePWAManifest(currentColors.theme, currentColors.bg);
+        updateThemeModalActive(themeName, currentColors.theme);
+    } else if (customHex) {
+        let hex = customHex.trim();
+        if (!hex.startsWith('#')) hex = '#' + hex;
+        const rgb = hexToRgb(hex);
+        if (!rgb) return;
+
+        const darkHex = adjustColor(hex, -35);
+        const hoverHex = adjustColor(hex, -20);
+        const secondaryHex = adjustColor(hex, 25);
+        const rgbStr = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
+
+        document.body.removeAttribute('data-theme');
+        const rootStyle = document.documentElement.style;
+        rootStyle.setProperty('--theme-primary', hex);
+        rootStyle.setProperty('--theme-primary-hover', hoverHex);
+        rootStyle.setProperty('--theme-secondary', secondaryHex);
+        rootStyle.setProperty('--theme-dark', darkHex);
+        rootStyle.setProperty('--theme-light', `rgba(${rgbStr}, 0.08)`);
+        rootStyle.setProperty('--theme-primary-rgb', rgbStr);
+        rootStyle.setProperty('--theme-glow', `rgba(${rgbStr}, 0.28)`);
+        rootStyle.setProperty('--theme-card-tint', `rgba(${rgbStr}, 0.035)`);
+        rootStyle.setProperty('--theme-card-border', `rgba(${rgbStr}, 0.14)`);
+        rootStyle.setProperty('--theme-th-bg', `rgba(${rgbStr}, 0.08)`);
+        rootStyle.setProperty('--theme-th-color', hex);
+        rootStyle.setProperty('--theme-th-border', `rgba(${rgbStr}, 0.2)`);
+        rootStyle.setProperty('--theme-gradient', `linear-gradient(135deg, ${darkHex} 0%, ${hex} 50%, ${secondaryHex} 100%)`);
+        rootStyle.setProperty('--theme-gradient-glass', `linear-gradient(135deg, rgba(${rgbStr}, 0.95) 0%, rgba(${rgbStr}, 0.88) 50%, rgba(${rgbStr}, 0.8) 100%)`);
+
+        localStorage.setItem('absensi_pkl_theme', 'custom');
+        localStorage.setItem('absensi_pkl_custom_color', hex);
+
+        const metaTheme = document.getElementById('meta-theme-color');
+        if (metaTheme) metaTheme.setAttribute('content', hex);
+
+        updatePWAManifest(hex, darkHex);
+        updateThemeModalActive('custom', hex);
     }
 
-    // Save to storage
-    localStorage.setItem('absensi_pkl_theme', themeName);
+    if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+    }
+}
 
-    // Update active dot in navbar
-    document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
-    const activeDot = document.querySelector(`.theme-dot-${themeName}`);
-    if (activeDot) activeDot.classList.add('active');
-
-    // Update Meta Theme Color for mobile browser address bar
-    const themeColors = {
-        hijau: '#0b6e4f',
-        biru: '#1d4ed8',
-        pink: '#be185d',
-        oren: '#c2410c',
-        ungu: '#7e22ce'
-    };
-    const metaTheme = document.getElementById('meta-theme-color');
-    if (metaTheme) metaTheme.setAttribute('content', themeColors[themeName] || '#0b6e4f');
+function updateThemeModalActive(themeName, customHex = null) {
+    document.querySelectorAll('.theme-preset-card').forEach(c => c.classList.remove('active'));
+    if (themeName !== 'custom') {
+        const activeCard = document.querySelector(`.theme-card-${themeName}`);
+        if (activeCard) activeCard.classList.add('active');
+    }
+    const colorInput = document.getElementById('custom-theme-color-input');
+    const colorHex = document.getElementById('custom-theme-color-hex');
+    if (customHex && colorInput && colorHex) {
+        colorInput.value = customHex;
+        colorHex.value = customHex.toUpperCase();
+    }
 }
 
 function initAppTheme() {
     const saved = localStorage.getItem('absensi_pkl_theme') || 'hijau';
-    setAppTheme(saved);
+    const customColor = localStorage.getItem('absensi_pkl_custom_color');
+    if (saved === 'custom' && customColor) {
+        setAppTheme('custom', customColor);
+    } else {
+        setAppTheme(saved);
+    }
 }
+
+function openThemePickerModal() {
+    const modal = document.getElementById('modal-theme-picker');
+    if (modal) {
+        modal.classList.remove('hidden');
+        const saved = localStorage.getItem('absensi_pkl_theme') || 'hijau';
+        const customColor = localStorage.getItem('absensi_pkl_custom_color');
+        updateThemeModalActive(saved, customColor || '#0b6e4f');
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function closeThemePickerModal() {
+    const modal = document.getElementById('modal-theme-picker');
+    if (modal) modal.classList.add('hidden');
+}
+
+function syncCustomColorInput(val) {
+    const hexInput = document.getElementById('custom-theme-color-hex');
+    if (hexInput) hexInput.value = val.toUpperCase();
+}
+
+function syncCustomColorHex(val) {
+    const colorInput = document.getElementById('custom-theme-color-input');
+    if (/^#[0-9A-Fa-f]{6}$/.test(val) && colorInput) {
+        colorInput.value = val;
+    }
+}
+
+function applyCustomThemeColor() {
+    const hexInput = document.getElementById('custom-theme-color-hex');
+    let val = hexInput ? hexInput.value.trim() : '';
+    if (!val.startsWith('#')) val = '#' + val;
+    if (!/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        showToast('Format warna hex tidak valid (contoh: #0b6e4f)', 'error');
+        return;
+    }
+    setAppTheme('custom', val);
+    showToast('Tema warna kustom berhasil diterapkan!', 'success');
+}
+
 window.setAppTheme = setAppTheme;
+window.initAppTheme = initAppTheme;
+window.openThemePickerModal = openThemePickerModal;
+window.closeThemePickerModal = closeThemePickerModal;
+window.syncCustomColorInput = syncCustomColorInput;
+window.syncCustomColorHex = syncCustomColorHex;
+window.applyCustomThemeColor = applyCustomThemeColor;
 
 // Initialize App on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -176,13 +347,16 @@ function showView(viewName) {
     const bottomNav = document.getElementById('mobile-bottom-nav');
     const pklNavGroup = document.getElementById('mob-nav-pkl-group');
     const adminNavGroup = document.getElementById('mob-nav-admin-group');
+    const btnLogoutTop = document.getElementById('btn-logout-top');
 
     if (viewName === 'login') {
         if (userHeaderInfo) userHeaderInfo.classList.add('hidden');
+        if (btnLogoutTop) btnLogoutTop.classList.add('hidden');
         if (navSubtitle) navSubtitle.textContent = 'Sistem Absensi Digital PKL';
         if (bottomNav) bottomNav.classList.add('hidden');
     } else {
         if (userHeaderInfo) userHeaderInfo.classList.remove('hidden');
+        if (btnLogoutTop) btnLogoutTop.classList.remove('hidden');
         if (userBadgeName && AppState.currentUser) {
             userBadgeName.textContent = AppState.currentUser.full_name;
         }

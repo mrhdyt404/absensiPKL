@@ -1,17 +1,35 @@
 <?php
 // index.php - Main Single Page Application for Sistem Absensi PKL PTPN IV Regional 3
 require_once __DIR__ . '/config/db.php';
+
+$initTheme = $_COOKIE['absensi_pkl_theme'] ?? 'hijau';
+$initCustomColor = $_COOKIE['absensi_pkl_custom_color'] ?? '';
+$themeMap = [
+    'hijau' => ['theme' => '#0b6e4f', 'bg' => '#064e3b'],
+    'biru'  => ['theme' => '#1d4ed8', 'bg' => '#1e3a8a'],
+    'pink'  => ['theme' => '#be185d', 'bg' => '#831843'],
+    'oren'  => ['theme' => '#c2410c', 'bg' => '#7c2d12'],
+    'ungu'  => ['theme' => '#7e22ce', 'bg' => '#581c87'],
+    'teal'  => ['theme' => '#0f766e', 'bg' => '#134e4a'],
+    'merah' => ['theme' => '#b91c1c', 'bg' => '#7f1d1d'],
+];
+$serverThemeColor = '#0b6e4f';
+if ($initTheme === 'custom' && !empty($initCustomColor)) {
+    $serverThemeColor = '#' . ltrim($initCustomColor, '#');
+} elseif (isset($themeMap[$initTheme])) {
+    $serverThemeColor = $themeMap[$initTheme]['theme'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Absensi PKL | PTPN IV Regional 3</title>
+    <title>ABSENSI PKL TEKPOL | PTPN IV Regional 3</title>
     
     <!-- PWA & Apple Meta Tags -->
-    <link rel="manifest" href="./manifest.webmanifest">
-    <meta name="theme-color" content="#0b6e4f" id="meta-theme-color">
+    <link rel="manifest" href="./manifest.php" id="pwa-manifest-link">
+    <meta name="theme-color" content="<?php echo htmlspecialchars($serverThemeColor); ?>" id="meta-theme-color">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Absensi PKL">
@@ -28,7 +46,7 @@ require_once __DIR__ . '/config/db.php';
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body <?php if ($initTheme !== 'hijau' && $initTheme !== 'custom') echo 'data-theme="' . htmlspecialchars($initTheme) . '"'; ?>>
 
     <!-- Toast Notifications Container -->
     <div id="toast-container"></div>
@@ -58,18 +76,22 @@ require_once __DIR__ . '/config/db.php';
             </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 0.6rem;">
-            <!-- Theme Color Selector Pill -->
-            <div class="theme-pill-container" title="Pilih Tema Warna">
-                <div class="theme-dot theme-dot-hijau active" onclick="setAppTheme('hijau')" title="Tema Hijau Emerald (PTPN IV)"></div>
-                <div class="theme-dot theme-dot-biru" onclick="setAppTheme('biru')" title="Tema Biru Sapphire"></div>
-                <div class="theme-dot theme-dot-pink" onclick="setAppTheme('pink')" title="Tema Pink Neon"></div>
-                <div class="theme-dot theme-dot-oren" onclick="setAppTheme('oren')" title="Tema Oren Sunburst"></div>
-                <div class="theme-dot theme-dot-ungu" onclick="setAppTheme('ungu')" title="Tema Ungu Terang"></div>
-            </div>
+        <div class="navbar-actions">
+            <!-- Theme Color Selector Trigger Button (Icon) -->
+            <button id="btn-theme-picker" type="button" class="btn-navbar-action" onclick="openThemePickerModal()" title="Pilih & Kustomisasi Tema Warna">
+                <i data-lucide="palette" style="width: 18px; height: 18px; display: inline-block;"></i>
+                <span class="hide-mobile" style="font-size: 0.75rem;">Tema</span>
+            </button>
 
+            <!-- Install PWA Button -->
             <button id="btn-pwa-install-header" onclick="showPWAInstructions()" class="btn btn-sm btn-gold hidden">
-                <i data-lucide="download"></i> <span class="hide-mobile">Install</span>
+                <i data-lucide="download" style="width: 16px; height: 16px;"></i> <span class="hide-mobile">Install</span>
+            </button>
+
+            <!-- Top Logout Button -->
+            <button id="btn-logout-top" type="button" class="btn-navbar-action btn-logout-nav hidden" onclick="logoutUser()" title="Keluar / Logout">
+                <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+                <span class="hide-mobile" style="font-size: 0.75rem;">Keluar</span>
             </button>
         </div>
     </header>
@@ -146,13 +168,9 @@ require_once __DIR__ . '/config/db.php';
                         </div>
                     </div>
                     <div class="profile-card-actions">
-                        <button onclick="openProfileSettingsModal()" class="btn-profile-action" title="Edit Profil & Password">
+                        <button type="button" onclick="openProfileSettingsModal()" class="btn-profile-action" title="Edit Profil & Password">
                             <i data-lucide="user-cog"></i>
                             <span class="hide-mobile">Profil</span>
-                        </button>
-                        <button onclick="logoutUser()" class="btn-profile-action btn-logout" title="Keluar">
-                            <i data-lucide="log-out"></i>
-                            <span class="hide-mobile">Keluar</span>
                         </button>
                     </div>
                 </div>
@@ -350,8 +368,8 @@ require_once __DIR__ . '/config/db.php';
 
         <!-- ================= VIEW 3: ADMIN SDM & PEMBIMBING ================= -->
         <section id="view-admin" class="view-section hidden">
-            <!-- Admin Top Navigation Tabs -->
-            <div style="display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.75rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color);">
+            <!-- Admin Top Navigation Tabs (Hidden on mobile) -->
+            <div class="admin-top-nav-tabs">
                 <button class="btn btn-sm btn-primary tab-admin-btn" onclick="switchAdminTab('monitoring')" id="tab-btn-monitoring">
                     <i data-lucide="layout-dashboard"></i> Monitoring Harian
                 </button>
@@ -948,61 +966,104 @@ require_once __DIR__ . '/config/db.php';
         </div>
     </div>
 
-    <!-- 6. MODAL PETUNJUK PWA INSTALL (ANDROID & APPLE iOS) -->
+    <!-- 6. MODAL PETUNJUK PWA INSTALL (ANDROID, IOS & DESKTOP) -->
     <div id="pwa-modal-guide" class="modal-backdrop hidden">
-        <div class="modal-content" style="max-width: 480px;">
-            <div class="modal-header gradient-ptpn" style="color: white;">
-                <h3 style="color: white; font-size: 1.15rem;"><i data-lucide="smartphone" style="display: inline; width: 20px;"></i> Pasang Aplikasi di Smartphone</h3>
-                <button onclick="closePWAGuide()" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border-radius: 50%; width: 32px; height: 32px; padding: 0;">✕</button>
-            </div>
-
-            <div class="modal-body">
-                <!-- iOS Guide Section -->
-                <div id="pwa-guide-ios">
-                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                        <div style="width: 44px; height: 44px; border-radius: 12px; background: #000; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
-                            
-                        </div>
-                        <div>
-                            <strong style="font-size: 1rem; display: block;">Panduan Pengguna Apple iPhone (iOS)</strong>
-                            <span style="font-size: 0.78rem; color: var(--text-muted);">Buka menggunakan browser <strong>Safari</strong></span>
-                        </div>
-                    </div>
-
-                    <div style="background: #f8fafc; border-radius: var(--radius-md); padding: 1rem; border: 1px solid var(--border-color); font-size: 0.85rem; line-height: 1.6;">
-                        <p style="margin-bottom: 0.6rem;"><strong>Langkah 1:</strong> Buka situs absensi ini di browser <strong>Safari</strong> iPhone Anda.</p>
-                        <p style="margin-bottom: 0.6rem;"><strong>Langkah 2:</strong> Ketuk tombol <strong>Bagikan / Share</strong> <i data-lucide="share" style="width: 16px; height: 16px; display: inline;"></i> di bagian bawah layar Safari.</p>
-                        <p style="margin-bottom: 0.6rem;"><strong>Langkah 3:</strong> Gulir ke bawah lalu pilih opsi <strong>"Tambahkan ke Layar Utama" (Add to Home Screen)</strong> <i data-lucide="plus-square" style="width: 16px; height: 16px; display: inline;"></i>.</p>
-                        <p style="margin-bottom: 0;"><strong>Langkah 4:</strong> Ketuk <strong>"Tambah" (Add)</strong> di pojok kanan atas. Icon aplikasi Absensi PKL akan langsung muncul di menu iPhone Anda!</p>
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header gradient-ptpn" style="color: white; border-top-left-radius: inherit; border-top-right-radius: inherit; display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.25rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <img src="assets/icons/icon-192.png" alt="Logo" style="width: 36px; height: 36px; border-radius: 10px; background: #fff; padding: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                    <div>
+                        <h3 style="color: white; font-size: 1.05rem; margin: 0; line-height: 1.2;">Pasang Aplikasi Absensi</h3>
+                        <span style="font-size: 0.75rem; color: rgba(255,255,255,0.85);">PTPN IV Regional 3</span>
                     </div>
                 </div>
+                <button onclick="closePWAGuide()" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border-radius: 50%; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer;">✕</button>
+            </div>
 
-                <!-- Android Guide Section -->
-                <div id="pwa-guide-android" class="hidden">
-                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                        <div style="width: 44px; height: 44px; border-radius: 12px; background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center;">
-                            <i data-lucide="smartphone"></i>
-                        </div>
-                        <div>
-                            <strong style="font-size: 1rem; display: block;">Panduan Pengguna Android</strong>
-                            <span style="font-size: 0.78rem; color: var(--text-muted);">Buka di Chrome / Samsung Internet</span>
-                        </div>
-                    </div>
+            <div class="modal-body" style="padding: 1.25rem;">
+                <!-- App Highlights -->
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; justify-content: center;">
+                    <span class="pwa-feature-chip"><i data-lucide="zap" style="width: 14px; height: 14px;"></i> Akses Instan</span>
+                    <span class="pwa-feature-chip"><i data-lucide="map-pin" style="width: 14px; height: 14px;"></i> GPS Lebih Stabil</span>
+                    <span class="pwa-feature-chip"><i data-lucide="bell" style="width: 14px; height: 14px;"></i> Notifikasi Presensi</span>
+                </div>
 
-                    <div style="background: #f8fafc; border-radius: var(--radius-md); padding: 1rem; border: 1px solid var(--border-color); font-size: 0.85rem; line-height: 1.6;">
-                        <p style="margin-bottom: 0.6rem;"><strong>Langkah 1:</strong> Ketuk tombol <strong>"Install Sekarang"</strong> di bawah atau banner di atas layar.</p>
-                        <p style="margin-bottom: 0.6rem;"><strong>Langkah 2:</strong> Jika tidak muncul otomatis, ketuk menu titik tiga (⋮) di pojok kanan atas browser Chrome.</p>
-                        <p style="margin-bottom: 0;"><strong>Langkah 3:</strong> Pilih <strong>"Install Aplikasi"</strong> atau <strong>"Tambahkan ke Layar Utama"</strong>.</p>
-                    </div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 1rem;">
+                    Pasang aplikasi di layar utama perangkat Anda untuk pengalaman presensi PKL yang lebih cepat, praktis, dan tanpa perlu membuka browser setiap hari.
+                </p>
 
-                    <button onclick="installPWA()" class="btn btn-primary btn-block btn-lg" style="margin-top: 1rem;">
-                        <i data-lucide="download"></i> Pasang Aplikasi Sekarang
+                <!-- Platform Tabs -->
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <button id="pwa-tab-android" type="button" class="pwa-tab-btn active" onclick="switchPWATab('android')">
+                        <i data-lucide="smartphone" style="width: 16px; height: 16px;"></i> Android / Desktop
+                    </button>
+                    <button id="pwa-tab-ios" type="button" class="pwa-tab-btn" onclick="switchPWATab('ios')">
+                        <i data-lucide="apple" style="width: 16px; height: 16px;"></i> Apple iPhone (iOS)
                     </button>
                 </div>
+
+                <!-- Android & Desktop Section -->
+                <div id="pwa-guide-android">
+                    <button type="button" onclick="installPWA()" class="btn btn-primary btn-block btn-lg" style="margin-bottom: 0.85rem; font-weight: 700; box-shadow: 0 4px 15px rgba(11, 110, 79, 0.3);">
+                        <i data-lucide="download"></i> Pasang / Install Aplikasi Sekarang
+                    </button>
+
+                    <div id="pwa-android-manual-note" style="font-size: 0.82rem; line-height: 1.5; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 0.75rem;">
+                        <strong style="color: var(--theme-dark); display: block; margin-bottom: 0.35rem;">Jika tombol di atas tidak otomatis memunculkan instalasi:</strong>
+                        <div class="pwa-step-card" style="margin-bottom: 0.4rem; padding: 0.5rem 0.75rem;">
+                            <div class="pwa-step-num">1</div>
+                            <div style="font-size: 0.8rem;">Ketuk menu titik tiga (⋮) di pojok kanan atas browser Chrome / Samsung Internet.</div>
+                        </div>
+                        <div class="pwa-step-card" style="margin-bottom: 0; padding: 0.5rem 0.75rem;">
+                            <div class="pwa-step-num">2</div>
+                            <div style="font-size: 0.8rem;">Pilih menu <strong>"Install Aplikasi"</strong> atau <strong>"Tambahkan ke Layar Utama"</strong>.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- iOS Section -->
+                <div id="pwa-guide-ios" class="hidden">
+                    <div style="margin-bottom: 0.75rem; font-size: 0.83rem; color: var(--text-muted); text-align: center;">
+                        Buka situs ini di browser <strong>Safari</strong> pada iPhone/iPad Anda, lalu ikuti langkah mudah berikut:
+                    </div>
+
+                    <div class="pwa-step-card">
+                        <div class="pwa-step-num">1</div>
+                        <div style="font-size: 0.83rem;">
+                            Ketuk tombol <strong>Bagikan / Share</strong> <i data-lucide="share" style="width: 15px; height: 15px; display: inline; vertical-align: middle; color: #0284c7;"></i> pada bilah bawah browser Safari.
+                        </div>
+                    </div>
+
+                    <div class="pwa-step-card">
+                        <div class="pwa-step-num">2</div>
+                        <div style="font-size: 0.83rem;">
+                            Gulir menu ke bawah lalu pilih opsi <strong>"Tambahkan ke Layar Utama"</strong> (<em>Add to Home Screen</em>) <i data-lucide="plus-square" style="width: 15px; height: 15px; display: inline; vertical-align: middle; color: #10b981;"></i>.
+                        </div>
+                    </div>
+
+                    <div class="pwa-step-card">
+                        <div class="pwa-step-num">3</div>
+                        <div style="font-size: 0.83rem;">
+                            Ketuk tombol <strong>"Tambah"</strong> (<em>Add</em>) di pojok kanan atas. Icon aplikasi Absensi PKL akan langsung siap di layar utama iPhone Anda!
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color); font-size: 0.8rem;">
+                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--text-muted);">
+                        <input type="checkbox" id="pwa-dont-show-again" style="accent-color: var(--theme-primary); cursor: pointer;">
+                        Jangan tampilkan popup ini lagi
+                    </label>
+                </div>
             </div>
 
-            <div class="modal-footer">
-                <button type="button" onclick="closePWAGuide()" class="btn btn-primary btn-block">Mengerti</button>
+            <div class="modal-footer" style="padding: 0.85rem 1.25rem; display: flex; gap: 0.5rem; justify-content: flex-end; background: #f8fafc; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit;">
+                <button type="button" onclick="closePWAGuide(true)" class="btn btn-secondary btn-sm" style="font-size: 0.85rem;">
+                    Nanti Saja
+                </button>
+                <button type="button" onclick="closePWAGuide()" class="btn btn-primary btn-sm" style="font-size: 0.85rem;">
+                    <i data-lucide="check"></i> Mengerti
+                </button>
             </div>
         </div>
     </div>
@@ -1113,6 +1174,92 @@ require_once __DIR__ . '/config/db.php';
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- 8. MODAL KUSTOMISASI TEMA WARNA -->
+    <div id="modal-theme-picker" class="modal-backdrop hidden">
+        <div class="modal-content" style="max-width: 480px;">
+            <div class="modal-header gradient-ptpn" style="color: white; border-top-left-radius: inherit; border-top-right-radius: inherit; display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <i data-lucide="palette" style="width: 22px; height: 22px;"></i>
+                    <h3 style="color: white; font-size: 1.1rem; margin: 0;">Pilih & Kustomisasi Tema</h3>
+                </div>
+                <button onclick="closeThemePickerModal()" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border-radius: 50%; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer;">✕</button>
+            </div>
+
+            <div class="modal-body" style="padding: 1.25rem;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                    Sesuaikan skema warna tampilan aplikasi sesuai selera Anda. Background card dan header tabel otomatis menyesuaikan secara konsisten.
+                </p>
+
+                <h4 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.65rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="sparkles" style="width: 16px; height: 16px; color: var(--accent-gold);"></i> Pilihan Tema Warna Siap Pakai
+                </h4>
+
+                <div class="theme-preset-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 1.25rem;">
+                    <button type="button" class="theme-preset-card theme-card-hijau" onclick="setAppTheme('hijau')">
+                        <span class="theme-preset-preview" style="background: linear-gradient(135deg, #0b6e4f, #10b981);"></span>
+                        <span class="theme-preset-label">Hijau Emerald</span>
+                    </button>
+                    <button type="button" class="theme-preset-card theme-card-biru" onclick="setAppTheme('biru')">
+                        <span class="theme-preset-preview" style="background: linear-gradient(135deg, #1d4ed8, #38bdf8);"></span>
+                        <span class="theme-preset-label">Biru Sapphire</span>
+                    </button>
+                    <button type="button" class="theme-preset-card theme-card-pink" onclick="setAppTheme('pink')">
+                        <span class="theme-preset-preview" style="background: linear-gradient(135deg, #be185d, #f472b6);"></span>
+                        <span class="theme-preset-label">Pink Magenta</span>
+                    </button>
+                    <button type="button" class="theme-preset-card theme-card-oren" onclick="setAppTheme('oren')">
+                        <span class="theme-preset-preview" style="background: linear-gradient(135deg, #c2410c, #fb923c);"></span>
+                        <span class="theme-preset-label">Oren Sunburst</span>
+                    </button>
+                    <button type="button" class="theme-preset-card theme-card-ungu" onclick="setAppTheme('ungu')">
+                        <span class="theme-preset-preview" style="background: linear-gradient(135deg, #7e22ce, #c084fc);"></span>
+                        <span class="theme-preset-label">Ungu Violet</span>
+                    </button>
+                    <button type="button" class="theme-preset-card theme-card-teal" onclick="setAppTheme('teal')">
+                        <span class="theme-preset-preview" style="background: linear-gradient(135deg, #0f766e, #2dd4bf);"></span>
+                        <span class="theme-preset-label">Teal Cyan</span>
+                    </button>
+                </div>
+
+                <h4 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.65rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="sliders" style="width: 16px; height: 16px; color: var(--theme-primary);"></i> Kustom Warna Bebas (Color Picker)
+                </h4>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 0.9rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                        <div style="position: relative; width: 44px; height: 44px; border-radius: var(--radius-md); overflow: hidden; border: 2px solid #cbd5e1; box-shadow: 0 2px 6px rgba(0,0,0,0.1); flex-shrink: 0;">
+                            <input type="color" id="custom-theme-color-input" value="#0b6e4f" style="position: absolute; inset: -10px; width: 65px; height: 65px; cursor: pointer; border: none;" oninput="syncCustomColorInput(this.value)">
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="form-label" style="font-size: 0.75rem; margin-bottom: 0.2rem;">Kode Hex Warna</label>
+                            <div style="display: flex; gap: 0.4rem;">
+                                <input type="text" id="custom-theme-color-hex" class="form-control" value="#0b6e4f" maxlength="7" style="font-size: 0.85rem; padding: 0.35rem 0.65rem; font-family: monospace; font-weight: 700;" oninput="syncCustomColorHex(this.value)">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="applyCustomThemeColor()" style="padding: 0.35rem 0.75rem;">
+                                    <i data-lucide="check"></i> Terapkan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live preview swatch -->
+                    <div id="custom-theme-preview-box" style="padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); background: var(--theme-card-tint); border: 1px solid var(--theme-card-border); font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-weight: 600; color: var(--theme-primary);">Preview Tint Background Card & Tabel</span>
+                        <span class="badge" style="background: var(--theme-primary); color: white; font-size: 0.68rem;">Aktif</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="padding: 0.85rem 1.25rem; display: flex; gap: 0.5rem; justify-content: space-between; background: #f8fafc; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit;">
+                <button type="button" onclick="setAppTheme('hijau')" class="btn btn-secondary btn-sm" style="font-size: 0.8rem;">
+                    <i data-lucide="rotate-ccw"></i> Reset Standar
+                </button>
+                <button type="button" onclick="closeThemePickerModal()" class="btn btn-primary btn-sm" style="font-size: 0.85rem;">
+                    Selesai
+                </button>
+            </div>
         </div>
     </div>
 

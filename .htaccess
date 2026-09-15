@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /absensiPKL/
+
+# Route static manifest request to dynamic PHP manifest
+RewriteRule ^manifest\.(webmanifest|json)$ manifest.php [QSA,L]
+</IfModule>
