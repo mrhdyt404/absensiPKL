@@ -431,12 +431,77 @@ function renderUserInterface() {
     }
 }
 
+// Toggle Password Visibility (Eye icon)
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+
+    if (btn) {
+        const iconName = isPassword ? 'eye-off' : 'eye';
+        const iconSize = inputId === 'login-password' ? '18px' : '15px';
+        btn.innerHTML = `<i data-lucide="${iconName}" style="width: ${iconSize}; height: ${iconSize};"></i>`;
+        btn.setAttribute('aria-label', isPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi');
+        btn.setAttribute('title', isPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
+        if (window.lucide && typeof lucide.createIcons === 'function') {
+            lucide.createIcons({ root: btn });
+        }
+    }
+}
+window.togglePasswordVisibility = togglePasswordVisibility;
+
+// Role Selector on Login Page
+function selectLoginRole(role) {
+    const btnPkl = document.getElementById('role-btn-pkl');
+    const btnAdmin = document.getElementById('role-btn-admin');
+    const labelUser = document.getElementById('text-login-username');
+    const inputUser = document.getElementById('login-username');
+
+    if (role === 'admin') {
+        if (btnAdmin) btnAdmin.classList.add('active');
+        if (btnPkl) btnPkl.classList.remove('active');
+        if (labelUser) labelUser.textContent = 'Username Administrator';
+        if (inputUser) {
+            inputUser.placeholder = 'Masukkan username admin';
+        }
+    } else {
+        if (btnPkl) btnPkl.classList.add('active');
+        if (btnAdmin) btnAdmin.classList.remove('active');
+        if (labelUser) labelUser.textContent = 'Username / NIS / NIM / Email';
+        if (inputUser) {
+            inputUser.placeholder = 'Masukkan username atau NIS/NIM';
+        }
+    }
+}
+window.selectLoginRole = selectLoginRole;
+
 // Quick Demo Login Helper
+function quickFillRole(user, pass, role) {
+    selectLoginRole(role);
+    const userInput = document.getElementById('login-username');
+    const passInput = document.getElementById('login-password');
+    if (userInput && passInput) {
+        userInput.value = user;
+        passInput.value = pass;
+        showToast(`Akun demo ${role === 'admin' ? 'Admin SDM' : 'Peserta PKL'} (${user}) terisi otomatis.`, 'info');
+    }
+}
+window.quickFillRole = quickFillRole;
+
 function quickFillLogin(user, pass) {
     document.getElementById('login-username').value = user;
     document.getElementById('login-password').value = pass;
     document.getElementById('form-login').dispatchEvent(new Event('submit'));
 }
+window.quickFillLogin = quickFillLogin;
+
+// Login Help Information Dialog
+function showLoginHelp() {
+    showToast('Peserta PKL: Masuk dengan NIS/NIM atau username. Lupa kata sandi? Hubungi tim SDM PTPN IV.', 'info');
+}
+window.showLoginHelp = showLoginHelp;
 
 // Handle Login Submission
 async function handleLogin(e) {

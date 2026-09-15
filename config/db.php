@@ -1,6 +1,9 @@
 <?php
 // config/db.php - Database connection and global utilities
 
+// Set default timezone to WIB (Asia/Jakarta)
+date_default_timezone_set('Asia/Jakarta');
+
 // Start session if not started
 if (session_status() === PHP_SESSION_NONE) {
     // Set session cookie parameters for security & PWA persistence
@@ -31,6 +34,7 @@ function getDB() {
                 PDO::ATTR_EMULATE_PREPARES => false,
             ];
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+            $pdo->exec("SET time_zone = '+07:00'");
         } catch (PDOException $e) {
             http_response_code(500);
             echo json_encode([
