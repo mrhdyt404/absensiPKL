@@ -100,112 +100,41 @@ if ($initTheme === 'custom' && !empty($initCustomColor)) {
     <main class="main-container">
 
         <!-- ================= VIEW 1: LOGIN ================= -->
-        <section id="view-login" class="view-section login-view-section">
-            <div class="login-wrapper">
-                <!-- Ambient Glowing Background Elements -->
-                <div class="login-glow-orb orb-1"></div>
-                <div class="login-glow-orb orb-2"></div>
-
-                <div class="login-card-container">
-                    <!-- Header Hero inside Card -->
-                    <div class="login-card-header">
-                        <div class="login-logo-ring">
-                            <img src="assets/icons/logo.png" alt="Logo PTPN IV" class="login-logo-img">
-                        </div>
-                        <div class="login-badge-pill">
-                            <i data-lucide="shield-check" style="width: 13px; height: 13px;"></i> Presensi GPS & AI Selfie
-                        </div>
-                        <h2 class="login-title">PORTAL ABSENSI PKL</h2>
-                        <p class="login-subtitle">PT Perkebunan Nusantara IV Regional 3</p>
+        <section id="view-login" class="view-section">
+            <div style="max-width: 440px; margin: 2rem auto;">
+                <div class="card" style="box-shadow: var(--shadow-xl); border: 1px solid rgba(11, 110, 79, 0.15); border-radius: var(--radius-xl); overflow: hidden; padding: 0;">
+                    <div class="gradient-ptpn" style="padding: 2.2rem 1.5rem; text-align: center; color: white;">
+                        <img src="assets/icons/logo.png" style="width: 80px; height: 80px; border-radius: 20px; background: #ffffff; padding: 6px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); margin-bottom: 0.8rem; border: 2px solid rgba(255,255,255,0.4);" alt="Logo PTPN IV">
+                        <h2 style="color: white; font-size: 1.4rem; font-weight: 800; margin-bottom: 0.2rem;">PORTAL ABSENSI PKL</h2>
+                        <p style="font-size: 0.85rem; opacity: 0.9;">PT Perkebunan Nusantara IV Regional 3</p>
                     </div>
 
-                    <!-- Login Body -->
-                    <div class="login-card-body">
-                        <!-- Role Selector Segmented Control -->
-                        <div class="login-role-selector">
-                            <button type="button" class="login-role-btn active" id="role-btn-pkl" onclick="selectLoginRole('pkl')">
-                                <i data-lucide="graduation-cap"></i>
-                                <span>Peserta PKL</span>
-                            </button>
-                            <button type="button" class="login-role-btn" id="role-btn-admin" onclick="selectLoginRole('admin')">
-                                <i data-lucide="shield"></i>
-                                <span>Admin SDM</span>
-                            </button>
-                        </div>
-
-                        <form id="form-login" onsubmit="handleLogin(event)" class="login-form">
-                            <div class="form-group login-field">
-                                <label class="form-label" for="login-username" id="label-login-username">
-                                    <span id="text-login-username">Username / NIS / NIM / Email</span>
-                                    <span class="required-star">*</span>
-                                </label>
-                                <div class="input-icon-wrapper">
-                                    <input type="text" id="login-username" class="form-control login-input" placeholder="Masukkan username atau NIS/NIM" required autofocus autocomplete="username">
-                                    <i data-lucide="user" class="input-leading-icon"></i>
+                    <div style="padding: 1.75rem;">
+                        <form id="form-login" onsubmit="handleLogin(event)">
+                            <div class="form-group">
+                                <label class="form-label" for="login-username">Username / NIS / NIM / Email</label>
+                                <div style="position: relative;">
+                                    <input type="text" id="login-username" class="form-control" placeholder="Masukkan username atau NIS/NIM" required autofocus style="padding-left: 2.4rem;">
+                                    <i data-lucide="user" style="position: absolute; left: 0.8rem; top: 0.8rem; width: 18px; height: 18px; color: var(--text-muted);"></i>
                                 </div>
                             </div>
 
-                            <div class="form-group login-field">
-                                <div class="field-header-row">
-                                    <label class="form-label" for="login-password">
-                                        Kata Sandi <span class="required-star">*</span>
-                                    </label>
-                                    <a href="javascript:void(0)" onclick="showLoginHelp()" class="forgot-link">Bantuan?</a>
-                                </div>
-                                <div class="input-icon-wrapper">
-                                    <input type="password" id="login-password" class="form-control login-input" placeholder="Masukkan kata sandi akun" required autocomplete="current-password">
-                                    <i data-lucide="lock" class="input-leading-icon"></i>
-                                    <button type="button" class="btn-password-toggle" onclick="togglePasswordVisibility('login-password', this)" title="Tampilkan/Sembunyikan kata sandi" aria-label="Lihat kata sandi">
-                                        <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
-                                    </button>
+                            <div class="form-group">
+                                <label class="form-label" for="login-password">Kata Sandi</label>
+                                <div style="position: relative;">
+                                    <input type="password" id="login-password" class="form-control" placeholder="Masukkan kata sandi" required style="padding-left: 2.4rem;">
+                                    <i data-lucide="lock" style="position: absolute; left: 0.8rem; top: 0.8rem; width: 18px; height: 18px; color: var(--text-muted);"></i>
                                 </div>
                             </div>
 
-                            <button type="submit" id="btn-submit-login" class="btn btn-primary btn-block btn-lg btn-login-submit">
-                                <i data-lucide="log-in"></i>
-                                <span>Masuk ke Sistem</span>
+                            <button type="submit" id="btn-submit-login" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.25rem;">
+                                <i data-lucide="log-in"></i> Masuk Sekarang
                             </button>
                         </form>
 
-                        <!-- Demo Accounts Quick Chips -->
-                        <div class="demo-accounts-box">
-                            <div class="demo-accounts-title">
-                                <i data-lucide="sparkles" style="width: 12px; height: 12px; color: var(--accent-gold);"></i>
-                                <span>Akses Cepat Demo:</span>
-                            </div>
-                            <div class="demo-chips-group">
-                                <button type="button" onclick="quickFillRole('pkl1', '123456', 'pkl')" class="demo-chip" title="Demo Akun Siswa/Mahasiswa PKL">
-                                    <i data-lucide="user-check"></i>
-                                    <span>PKL: <strong>pkl1</strong></span>
-                                </button>
-                                <button type="button" onclick="quickFillRole('admin', 'admin123', 'admin')" class="demo-chip demo-chip-admin" title="Demo Akun Administrator SDM">
-                                    <i data-lucide="key-round"></i>
-                                    <span>Admin: <strong>admin</strong></span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Feature Badges -->
-                        <div class="login-feature-strip">
-                            <div class="feature-item">
-                                <i data-lucide="map-pin"></i>
-                                <span>GPS Radius</span>
-                            </div>
-                            <div class="feature-item">
-                                <i data-lucide="camera"></i>
-                                <span>Live AI Selfie</span>
-                            </div>
-                            <div class="feature-item">
-                                <i data-lucide="smartphone"></i>
-                                <span>PWA App</span>
-                            </div>
-                        </div>
-
-                        <!-- PWA Mobile Install Guide Trigger -->
-                        <div class="login-footer-pwa">
-                            <button type="button" onclick="showPWAInstructions()" class="pwa-guide-btn">
-                                <i data-lucide="download-cloud"></i>
-                                <span>Panduan Pasang Aplikasi PWA di Layar HP</span>
+                        <div style="text-align: center; margin-top: 1.5rem;">
+                            <button type="button" onclick="showPWAInstructions()" class="btn btn-secondary btn-sm" style="background: none; border: none; color: var(--theme-primary); font-weight: 600;">
+                                <i data-lucide="smartphone"></i> Panduan Pasang PWA di HP
                             </button>
                         </div>
                     </div>
@@ -1222,32 +1151,17 @@ if ($initTheme === 'custom' && !empty($initCustomColor)) {
 
                         <div class="form-group" style="margin-bottom: 0.65rem;">
                             <label class="form-label" style="font-size: 0.78rem;">Kata Sandi Saat Ini</label>
-                            <div style="position: relative;">
-                                <input type="password" id="edit-current-password" class="form-control" placeholder="Masukkan kata sandi lama" style="padding-right: 2.5rem;">
-                                <button type="button" class="btn-password-toggle" onclick="togglePasswordVisibility('edit-current-password', this)" title="Lihat/Sembunyikan kata sandi" aria-label="Lihat kata sandi">
-                                    <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
-                                </button>
-                            </div>
+                            <input type="password" id="edit-current-password" class="form-control" placeholder="Masukkan kata sandi lama">
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label class="form-label" style="font-size: 0.78rem;">Kata Sandi Baru</label>
-                                <div style="position: relative;">
-                                    <input type="password" id="edit-new-password" class="form-control" placeholder="Min. 6 karakter" style="padding-right: 2.3rem;">
-                                    <button type="button" class="btn-password-toggle" onclick="togglePasswordVisibility('edit-new-password', this)" title="Lihat/Sembunyikan kata sandi" aria-label="Lihat kata sandi">
-                                        <i data-lucide="eye" style="width: 15px; height: 15px;"></i>
-                                    </button>
-                                </div>
+                                <input type="password" id="edit-new-password" class="form-control" placeholder="Min. 6 karakter">
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label class="form-label" style="font-size: 0.78rem;">Ulangi Sandi Baru</label>
-                                <div style="position: relative;">
-                                    <input type="password" id="edit-confirm-password" class="form-control" placeholder="Konfirmasi sandi" style="padding-right: 2.3rem;">
-                                    <button type="button" class="btn-password-toggle" onclick="togglePasswordVisibility('edit-confirm-password', this)" title="Lihat/Sembunyikan kata sandi" aria-label="Lihat kata sandi">
-                                        <i data-lucide="eye" style="width: 15px; height: 15px;"></i>
-                                    </button>
-                                </div>
+                                <input type="password" id="edit-confirm-password" class="form-control" placeholder="Konfirmasi sandi">
                             </div>
                         </div>
                     </div>

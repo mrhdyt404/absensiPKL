@@ -1,5 +1,5 @@
 // sw.js - Service Worker for PWA
-const CACHE_NAME = 'absensi-pkl-ptpn4-v2.3';
+const CACHE_NAME = 'absensi-pkl-ptpn4-v2.1';
 const STATIC_ASSETS = [
   './',
   './index.php',
