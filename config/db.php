@@ -86,3 +86,50 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
 
     return round($distance);
 }
+
+// Helper to get SQL WHERE clause condition based on logged-in admin division
+function getAdminDivisionFilter($tableAlias = 'u', &$params = []) {
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        return '';
+    }
+
+    $division = $_SESSION['division'] ?? '';
+    if (empty($division) && isset($_SESSION['user_id'])) {
+        $db = getDB();
+        $stmt = $db->prepare("SELECT division FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $division = $stmt->fetchColumn() ?: '';
+        $_SESSION['division'] = $division;
+    }
+
+    if (empty($division)) {
+        return '';
+    }
+
+    $col = !empty($tableAlias) ? "{$tableAlias}.division" : "division";
+    $divLower = strtolower(trim($division));
+
+    // If division is Teknik & Pengolahan (handles '&', 'dan', 'Dan')
+    if (strpos($divLower, 'teknik') !== false && strpos($divLower, 'pengolahan') !== false) {
+        return " AND ({$col} LIKE '%Teknik%' AND {$col} LIKE '%Pengolahan%')";
+    }
+
+    // If division is Sistem Manajemen
+    if (strpos($divLower, 'sistem manajemen') !== false || strpos($divLower, 'manajemen') !== false) {
+        $params[] = "%Sistem Manajemen%";
+        return " AND {$col} LIKE ?";
+    }
+
+    // Any other specific division
+    $params[] = "%{$division}%";
+    return " AND {$col} LIKE ?";
+}
+
+// Helper to get active admin division name
+function getAdminDivisionName() {
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        return '';
+    }
+    return $_SESSION['division'] ?? '';
+}
+

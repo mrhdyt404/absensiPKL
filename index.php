@@ -25,7 +25,7 @@ if ($initTheme === 'custom' && !empty($initCustomColor)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ABSENSI PKL TEKPOL | PTPN IV Regional 3</title>
+    <title>ABSENSI PKL | PTPN IV Regional 3</title>
     
     <!-- PWA & Apple Meta Tags -->
     <link rel="manifest" href="./manifest.php" id="pwa-manifest-link">
@@ -368,6 +368,25 @@ if ($initTheme === 'custom' && !empty($initCustomColor)) {
 
         <!-- ================= VIEW 3: ADMIN SDM & PEMBIMBING ================= -->
         <section id="view-admin" class="view-section hidden">
+            <!-- Admin Division Profile Banner -->
+            <div class="card glass" style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; padding: 1rem 1.25rem; border-left: 4px solid var(--theme-primary);">
+                <div style="display: flex; align-items: center; gap: 0.85rem;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(11, 110, 79, 0.12); display: flex; align-items: center; justify-content: center; color: var(--theme-primary); font-size: 1.25rem;">
+                        <i data-lucide="shield-check"></i>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <h3 id="admin-header-name" style="font-size: 1.1rem; margin: 0;">Administrator</h3>
+                            <span id="admin-header-division-badge" class="badge badge-info" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Divisi</span>
+                        </div>
+                        <span id="admin-header-sub" style="font-size: 0.8rem; color: var(--text-muted);">Pengelolaan absensi & data anak PKL divisi ini</span>
+                    </div>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); background: var(--bg-surface); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="building-2" style="width: 14px; height: 14px;"></i> <span>PTPN IV Regional 3</span>
+                </div>
+            </div>
+
             <!-- Admin Top Navigation Tabs (Hidden on mobile) -->
             <div class="admin-top-nav-tabs">
                 <button class="btn btn-sm btn-primary tab-admin-btn" onclick="switchAdminTab('monitoring')" id="tab-btn-monitoring">
@@ -827,7 +846,8 @@ if ($initTheme === 'custom' && !empty($initCustomColor)) {
                         </div>
                         <div class="form-group">
                             <label class="form-label">Divisi Penempatan PTPN IV</label>
-                            <input type="text" id="crud-division" class="form-control" required placeholder="Contoh: Bagian TI & Transformasi Digital">
+                            <input type="text" id="crud-division" class="form-control" required placeholder="Contoh: Teknik & Pengolahan">
+                            <small id="crud-division-hint" style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;"></small>
                         </div>
                     </div>
 

@@ -120,7 +120,11 @@ if ($method === 'GET') {
             $params[] = $type;
         }
 
-        if (!empty($division)) {
+        // Enforce admin division filter
+        $adminDivFilter = getAdminDivisionFilter('u', $params);
+        if (!empty($adminDivFilter)) {
+            $query .= $adminDivFilter;
+        } elseif (!empty($division)) {
             $query .= " AND u.division LIKE ?";
             $params[] = "%$division%";
         }

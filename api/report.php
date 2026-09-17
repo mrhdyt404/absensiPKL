@@ -34,7 +34,11 @@ if (!empty($institution)) {
     $params[] = "%$institution%";
 }
 
-if (!empty($division)) {
+// Enforce admin division filter
+$adminDivFilter = getAdminDivisionFilter('u', $params);
+if (!empty($adminDivFilter)) {
+    $query .= $adminDivFilter;
+} elseif (!empty($division)) {
     $query .= " AND u.division LIKE ?";
     $params[] = "%$division%";
 }
@@ -57,7 +61,9 @@ if ($format === 'csv') {
         '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
     ];
     $monthLabel = $monthNames[str_pad($month, 2, '0', STR_PAD_LEFT)] ?? $month;
-    $filename = "Rekap_Absensi_PKL_PTPN4_{$monthLabel}_{$year}.csv";
+    $adminDiv = getAdminDivisionName();
+    $divTag = !empty($adminDiv) ? "_" . preg_replace('/[^a-zA-Z0-9]/', '', $adminDiv) : "";
+    $filename = "Rekap_Absensi_PKL_PTPN4{$divTag}_{$monthLabel}_{$year}.csv";
 
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -69,6 +75,9 @@ if ($format === 'csv') {
     // Title rows
     fputcsv($output, ['REKAPITULASI ABSENSI PESERTA PKL / MAGANG']);
     fputcsv($output, ['PT PERKEBUNAN NUSANTARA IV REGIONAL 3']);
+    if (!empty($adminDiv)) {
+        fputcsv($output, ['Divisi Penempatan:', $adminDiv]);
+    }
     fputcsv($output, ['Periode:', "{$monthLabel} {$year}"]);
     fputcsv($output, []);
 

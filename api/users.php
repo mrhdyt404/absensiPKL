@@ -39,7 +39,11 @@ if ($method === 'GET') {
         $params[] = $type;
     }
 
-    if (!empty($division)) {
+    // Enforce admin division filter
+    $adminDivFilter = getAdminDivisionFilter('', $params);
+    if (!empty($adminDivFilter)) {
+        $query .= $adminDivFilter;
+    } elseif (!empty($division)) {
         $query .= " AND division LIKE ?";
         $params[] = "%$division%";
     }
@@ -57,15 +61,18 @@ if ($method === 'GET') {
     $stmt->execute($params);
     $users = $stmt->fetchAll();
 
-    // Summary statistics for PKL
-    $statStmt = $db->query("
+    // Summary statistics for PKL filtered by admin division
+    $statParams = [];
+    $statDivFilter = getAdminDivisionFilter('', $statParams);
+    $statStmt = $db->prepare("
         SELECT 
             COUNT(*) as total,
             SUM(CASE WHEN user_type = 'siswa' AND role = 'pkl' THEN 1 ELSE 0 END) as total_siswa,
             SUM(CASE WHEN user_type = 'mahasiswa' AND role = 'pkl' THEN 1 ELSE 0 END) as total_mahasiswa,
             SUM(CASE WHEN is_active = 1 AND role = 'pkl' THEN 1 ELSE 0 END) as total_active
-        FROM users WHERE role = 'pkl'
+        FROM users WHERE role = 'pkl' {$statDivFilter}
     ");
+    $statStmt->execute($statParams);
     $stats = $statStmt->fetch();
 
     sendJsonResponse(['success' => true, 'data' => $users, 'stats' => $stats]);
@@ -90,6 +97,12 @@ if ($method === 'POST') {
         $email = trim($input['email'] ?? '');
         $periodStart = !empty($input['period_start']) ? $input['period_start'] : null;
         $periodEnd = !empty($input['period_end']) ? $input['period_end'] : null;
+
+        $adminDivision = getAdminDivisionName();
+        if (!empty($adminDivision)) {
+            // Lock or default newly created PKL to the admin's division
+            $division = $adminDivision;
+        }
 
         if (empty($username) || empty($password) || empty($fullName) || empty($identifierNo)) {
             sendJsonResponse(['success' => false, 'message' => 'Username, Kata Sandi, Nama Lengkap, dan NIS/NIM wajib diisi.'], 400);
@@ -122,13 +135,14 @@ if ($method === 'POST') {
             sendJsonResponse(['success' => false, 'message' => 'ID peserta tidak valid.'], 400);
         }
 
+        $adminDivision = getAdminDivisionName();
         $fullName = trim($input['full_name'] ?? '');
         $identifierNo = trim($input['identifier_no'] ?? '');
         $username = trim($input['username'] ?? '');
         $userType = in_array($input['user_type'] ?? '', ['siswa', 'mahasiswa']) ? $input['user_type'] : 'siswa';
         $institution = trim($input['institution'] ?? '');
         $major = trim($input['major'] ?? '');
-        $division = trim($input['division'] ?? '');
+        $division = !empty($adminDivision) ? $adminDivision : trim($input['division'] ?? '');
         $phone = trim($input['phone'] ?? '');
         $email = trim($input['email'] ?? '');
         $periodStart = !empty($input['period_start']) ? $input['period_start'] : null;
@@ -172,7 +186,8 @@ if ($method === 'POST') {
         }
 
         $params[] = $id;
-        $updateStmt = $db->prepare("UPDATE users SET $fields WHERE id = ?");
+        $divFilter = getAdminDivisionFilter('', $params);
+        $updateStmt = $db->prepare("UPDATE users SET $fields WHERE id = ? AND role = 'pkl' {$divFilter}");
         $updateStmt->execute($params);
 
         sendJsonResponse(['success' => true, 'message' => 'Data peserta PKL berhasil diperbarui.']);
@@ -182,16 +197,20 @@ if ($method === 'POST') {
     if ($action === 'toggle_status') {
         $id = intval($input['id'] ?? 0);
         $status = intval($input['is_active'] ?? 1);
-        $stmt = $db->prepare("UPDATE users SET is_active = ? WHERE id = ? AND role = 'pkl'");
-        $stmt->execute([$status, $id]);
+        $params = [$status, $id];
+        $divFilter = getAdminDivisionFilter('', $params);
+        $stmt = $db->prepare("UPDATE users SET is_active = ? WHERE id = ? AND role = 'pkl' {$divFilter}");
+        $stmt->execute($params);
         sendJsonResponse(['success' => true, 'message' => 'Status akun berhasil diubah.']);
     }
 
     // D. Delete User
     if ($action === 'delete') {
         $id = intval($input['id'] ?? 0);
-        $stmt = $db->prepare("DELETE FROM users WHERE id = ? AND role = 'pkl'");
-        $stmt->execute([$id]);
+        $params = [$id];
+        $divFilter = getAdminDivisionFilter('', $params);
+        $stmt = $db->prepare("DELETE FROM users WHERE id = ? AND role = 'pkl' {$divFilter}");
+        $stmt->execute($params);
         sendJsonResponse(['success' => true, 'message' => 'Akun peserta PKL berhasil dihapus.']);
     }
 }

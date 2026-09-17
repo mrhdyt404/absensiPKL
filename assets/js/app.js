@@ -361,7 +361,9 @@ function showView(viewName) {
             userBadgeName.textContent = AppState.currentUser.full_name;
         }
         if (navSubtitle) {
-            navSubtitle.textContent = AppState.currentUser?.role === 'admin' ? 'Portal Admin SDM' : 'Portal Peserta PKL';
+            navSubtitle.textContent = AppState.currentUser?.role === 'admin' 
+                ? `Portal Admin • ${AppState.currentUser.division || 'SDM'}` 
+                : 'Portal Peserta PKL';
         }
 
         // Configure Bottom Nav Bar for Mobile
@@ -1172,11 +1174,40 @@ function openHistoryTab() {
 // ====================================================================
 
 function initAdminDashboard() {
+    const user = AppState.currentUser;
+    if (user) {
+        const headerName = document.getElementById('admin-header-name');
+        const headerDivBadge = document.getElementById('admin-header-division-badge');
+        const headerSub = document.getElementById('admin-header-sub');
+        if (headerName) headerName.textContent = user.full_name || user.username;
+        if (headerDivBadge) {
+            headerDivBadge.textContent = user.division || 'Semua Divisi';
+            if (user.division && user.division.toLowerCase().includes('manajemen')) {
+                headerDivBadge.className = 'badge badge-gold';
+            } else {
+                headerDivBadge.className = 'badge badge-info';
+            }
+        }
+        if (headerSub) {
+            headerSub.textContent = `Pengelolaan absensi & data anak PKL Divisi ${user.division || ''}`;
+        }
+    }
+
     // Default to current date for filter
     const todayStr = new Date().toISOString().split('T')[0];
     document.getElementById('admin-filter-date').value = todayStr;
     document.getElementById('report-month').value = new Date().getMonth() + 1;
     document.getElementById('report-year').value = new Date().getFullYear();
+
+    if (user && user.division) {
+        const repDiv = document.getElementById('report-filter-div');
+        if (repDiv) {
+            repDiv.value = user.division;
+            repDiv.readOnly = true;
+            repDiv.style.background = '#f1f5f9';
+            repDiv.title = 'Terkunci sesuai divisi akun admin';
+        }
+    }
 
     switchAdminTab('monitoring');
 }
@@ -1343,17 +1374,42 @@ function openUserModal(mode, userId = null) {
     document.getElementById('crud-user-action').value = mode;
     document.getElementById('crud-user-id').value = userId || '';
 
+    const divInput = document.getElementById('crud-division');
+    const divHint = document.getElementById('crud-division-hint');
+
     if (mode === 'create') {
         title.innerHTML = `<i data-lucide="user-plus" style="display: inline; width: 20px;"></i> Tambah Akun Siswa/Mahasiswa PKL`;
         passLabel.textContent = 'Kata Sandi (Wajib Diisi)';
         document.getElementById('crud-password').required = true;
         document.getElementById('crud-username').disabled = false;
+
+        if (AppState.currentUser && AppState.currentUser.division) {
+            divInput.value = AppState.currentUser.division;
+            divInput.readOnly = true;
+            divInput.style.background = '#f1f5f9';
+            if (divHint) divHint.textContent = `* Otomatis terdaftar ke Divisi ${AppState.currentUser.division}`;
+        } else {
+            divInput.readOnly = false;
+            divInput.style.background = '';
+            if (divHint) divHint.textContent = '';
+        }
+
         modal.classList.remove('hidden');
     } else {
         title.innerHTML = `<i data-lucide="edit-3" style="display: inline; width: 20px;"></i> Edit Akun Siswa/Mahasiswa PKL`;
         passLabel.textContent = 'Kata Sandi Baru (Kosongkan jika tidak diubah)';
         document.getElementById('crud-password').required = false;
         document.getElementById('crud-username').disabled = true;
+
+        if (AppState.currentUser && AppState.currentUser.division) {
+            divInput.readOnly = true;
+            divInput.style.background = '#f1f5f9';
+            if (divHint) divHint.textContent = `* Terkunci pada Divisi ${AppState.currentUser.division}`;
+        } else {
+            divInput.readOnly = false;
+            divInput.style.background = '';
+            if (divHint) divHint.textContent = '';
+        }
 
         // Fetch user data
         fetch(`api/users.php?id=${userId}`)
@@ -1364,7 +1420,7 @@ function openUserModal(mode, userId = null) {
                     document.getElementById('crud-full-name').value = u.full_name;
                     document.getElementById('crud-identifier-no').value = u.identifier_no;
                     document.getElementById('crud-user-type').value = u.user_type;
-                    document.getElementById('crud-division').value = u.division || '';
+                    document.getElementById('crud-division').value = u.division || (AppState.currentUser?.division || '');
                     document.getElementById('crud-institution').value = u.institution || '';
                     document.getElementById('crud-major').value = u.major || '';
                     document.getElementById('crud-phone').value = u.phone || '';
@@ -1741,7 +1797,14 @@ async function loadAdminReport() {
     const month = document.getElementById('report-month').value;
     const year = document.getElementById('report-year').value;
     const inst = document.getElementById('report-filter-inst').value;
-    const div = document.getElementById('report-filter-div').value;
+    const repDivInput = document.getElementById('report-filter-div');
+    if (AppState.currentUser && AppState.currentUser.division && repDivInput) {
+        repDivInput.value = AppState.currentUser.division;
+        repDivInput.readOnly = true;
+        repDivInput.style.background = '#f1f5f9';
+        repDivInput.title = 'Terkunci sesuai divisi akun admin';
+    }
+    const div = repDivInput ? repDivInput.value : '';
     const tbody = document.getElementById('tbody-admin-report');
 
     try {
@@ -1778,7 +1841,7 @@ function exportReportCSV() {
     const month = document.getElementById('report-month').value;
     const year = document.getElementById('report-year').value;
     const inst = document.getElementById('report-filter-inst').value;
-    const div = document.getElementById('report-filter-div').value;
+    const div = AppState.currentUser?.division || document.getElementById('report-filter-div').value;
     window.location.href = `api/report.php?format=csv&month=${month}&year=${year}&institution=${encodeURIComponent(inst)}&division=${encodeURIComponent(div)}`;
 }
 

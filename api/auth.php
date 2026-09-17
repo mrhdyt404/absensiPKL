@@ -30,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
     $_SESSION['role'] = $user['role'];
     $_SESSION['full_name'] = $user['full_name'];
     $_SESSION['user_type'] = $user['user_type'];
+    $_SESSION['division'] = $user['division'] ?? '';
 
     unset($user['password']);
 
@@ -66,6 +67,11 @@ if ($action === 'check') {
         session_destroy();
         sendJsonResponse(['success' => false, 'authenticated' => false]);
     }
+
+    // Refresh session division & details
+    $_SESSION['division'] = $user['division'] ?? '';
+    $_SESSION['full_name'] = $user['full_name'];
+    $_SESSION['role'] = $user['role'];
 
     // Get today's attendance for this user if pkl
     $today = date('Y-m-d');

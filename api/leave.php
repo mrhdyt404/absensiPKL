@@ -51,13 +51,23 @@ if ($method === 'GET') {
             $params[] = "%$search%";
         }
 
+        // Enforce admin division filter
+        $adminDivFilter = getAdminDivisionFilter('u', $params);
+        if (!empty($adminDivFilter)) {
+            $query .= $adminDivFilter;
+        }
+
         $query .= " ORDER BY lp.created_at DESC";
         $stmt = $db->prepare($query);
         $stmt->execute($params);
         $leaves = $stmt->fetchAll();
 
-        // Pending count
-        $pendingCount = $db->query("SELECT COUNT(*) FROM leaves_permits WHERE status = 'pending'")->fetchColumn();
+        // Pending count filtered by admin division
+        $pendingParams = [];
+        $pendingDivFilter = getAdminDivisionFilter('u', $pendingParams);
+        $pendingStmt = $db->prepare("SELECT COUNT(*) FROM leaves_permits lp JOIN users u ON lp.user_id = u.id WHERE lp.status = 'pending' {$pendingDivFilter}");
+        $pendingStmt->execute($pendingParams);
+        $pendingCount = $pendingStmt->fetchColumn();
 
         sendJsonResponse(['success' => true, 'data' => $leaves, 'pending_count' => intval($pendingCount)]);
     } else {
